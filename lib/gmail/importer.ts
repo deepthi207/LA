@@ -4,6 +4,7 @@ import { extractEmailBodies } from "./extractor";
 import { parseIndeedHTML } from "../parsers/indeed-html";
 import { parseIndeed } from "../parsers/indeed";
 import { parseIdealist } from "../parsers/idealist";
+import { parseLinkedInEmail } from "../parsers/linkedin";
 import { parseDansListEmail } from "../parsers/parseDansListEmail";
 
 function normTitle(t: string) {
@@ -112,6 +113,9 @@ const dansList = await gmail.users.messages.list({
       console.log("FIRST JOB");
       console.log(jobs[0]);
     }
+      else if (from?.toLowerCase().includes("linkedin")) {
+  jobs = parseLinkedInEmail(htmlBody || "");
+}
 
     // ------------------------
     // IDEALIST
