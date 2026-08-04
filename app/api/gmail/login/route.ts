@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { oauth2Client } from "@/lib/gmail";
+import { getGoogleOAuthClient } from "@/lib/google-oauth";
 
 export async function GET() {
+  const oauth2Client = getGoogleOAuthClient();
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",

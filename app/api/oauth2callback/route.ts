@@ -1,12 +1,6 @@
-import { google } from "googleapis";
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "../../../lib/supabase-admin";
-
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  "http://localhost:3001/api/oauth2callback"
-);
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getGoogleOAuthClient } from "@/lib/google-oauth";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
@@ -18,27 +12,28 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const oauth2Client = getGoogleOAuthClient();
   const { tokens } = await oauth2Client.getToken(code);
 
   if (!tokens.refresh_token) {
     return NextResponse.json(
       {
         error: "No refresh token returned. Try visiting /api/auth-url again.",
-        tokens,
       },
       { status: 400 }
     );
   }
 
-  const { data, error } = await supabaseAdmin
+  const { error } = await getSupabaseAdmin()
     .from("gmail_tokens")
-    .insert({
+    .upsert({
       email: "admin",
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       expiry_date: tokens.expiry_date,
-    })
-    .select();
+      token_type: tokens.token_type,
+      scope: tokens.scope,
+    }, { onConflict: "email" });
 
   if (error) {
     return NextResponse.json({ success: false, error }, { status: 500 });
@@ -47,6 +42,5 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     success: true,
     message: "Gmail token saved!",
-    data,
   });
 }
